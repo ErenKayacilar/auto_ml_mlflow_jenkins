@@ -1,0 +1,13 @@
+# Python venv
+venv/
+__pycache__/
+
+# MLflow log ve kayıtları
+mlruns/
+mlartifacts/
+mlflow.db
+
+# Geçici / büyük dosyalar
+*.pkl
+*.log
+.DS_Store
