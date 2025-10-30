@@ -25,7 +25,7 @@ PRODUCTION_ALIAS = "Production"
 
 # --------------------------------------------------------------
 def create_dummy_data(rows=200):
-    """Basit sahte veri oluşturur."""
+    """Basit sahte veri olusturur."""
     data = {
         'yorum': [
             "bu ürün harika çok beğendim", "kesinlikle tavsiye etmiyorum berbat",
@@ -41,7 +41,7 @@ def create_dummy_data(rows=200):
 
 # --------------------------------------------------------------
 def main():
-    print("Veri oluşturuluyor...")
+    print("Veri olusturuluyor...")
     df = create_dummy_data(200)
 
     X = df[['yorum', 'puan']]
@@ -66,12 +66,12 @@ def main():
     with mlflow.start_run(run_name="LogisticRegression_C5") as run:
         print(f"MLflow Run ID: {run.info.run_id}")
 
-        print("Model eğitiliyor...")
+        print("Model egitiliyor...")
         pipeline.fit(X_train, y_train)
 
         preds = pipeline.predict(X_test)
         accuracy = accuracy_score(y_test, preds)
-        print(f"✅ Test Accuracy: {accuracy:.4f}")
+        print(f"Test Accuracy: {accuracy:.4f}")
         mlflow.log_metric("accuracy", accuracy)
 
         signature = infer_signature(X_train, pipeline.predict(X_train))
@@ -97,12 +97,12 @@ def main():
                 alias=PRODUCTION_ALIAS,
                 version=version
             )
-            print(f"🚀 '{REGISTERED_MODEL_NAME}' modelinin {version}. versiyonu '{PRODUCTION_ALIAS}' alias'ına atandı.")
+            print(f"'{REGISTERED_MODEL_NAME}' modelinin {version}. versiyonu '{PRODUCTION_ALIAS}' alias'ina atandi.")
         except Exception as e:
-            print(f"⚠️ Alias eklenemedi (MLflow server kapalı olabilir): {e}")
+            print(f"Alias eklenemedi (MLflow server kapali olabilir): {e}")
 
-        print("Run tamamlandı.")
-        print(f"📊 Run klasörü: {os.path.abspath('mlruns')}")
+        print("Run tamamlandi.")
+        print(f"Run klasörü: {os.path.abspath('mlruns')}")
 
 # --------------------------------------------------------------
 if __name__ == "__main__":
