@@ -11,9 +11,12 @@ import mlflow
 import mlflow.sklearn
 from mlflow.models import infer_signature
 from mlflow import MlflowClient
+import os
 
-# MLflow bağlantısı
-MLFLOW_URI = "http://127.0.0.1:5000"
+# --------------------------------------------------------------
+# 🔧 MLflow bağlantı ayarı (otomatik kontrol)
+# Önce environment değişkeninden oku, yoksa local dosyaya kaydet
+MLFLOW_URI = os.getenv("MLFLOW_TRACKING_URI", "file:./mlruns")
 mlflow.set_tracking_uri(MLFLOW_URI)
 mlflow.set_experiment("Yorum Onaylama Deneyi")
 
@@ -31,7 +34,7 @@ def create_dummy_data(rows=200):
             "eh işte idare eder", "beklentimi karşılamadı",
             "gerçekten çok başarılı bir ürün", "malzemesi çok kalitesiz"
         ] * (rows // 10),
-        'puan': [float(random.randint(1, 5)) for _ in range(rows)],  # float çevrildi
+        'puan': [float(random.randint(1, 5)) for _ in range(rows)],
         'onaylandi': [1, 0, 1, 0, 1, 0, 1, 0, 1, 0] * (rows // 10)
     }
     return pd.DataFrame(data)
@@ -49,16 +52,17 @@ def main():
         transformers=[
             ('text', TfidfVectorizer(), 'yorum'),
             ('numeric', StandardScaler(), ['puan'])
-        ])
+        ]
+    )
 
     pipeline = Pipeline(steps=[
         ('preprocessor', preprocessor),
         ('classifier', LogisticRegression(C=5.0, solver='liblinear'))
     ])
 
+    # --------------------------------------------------------------
     mlflow.autolog(log_models=False)
 
-    # --------------------------------------------------------------
     with mlflow.start_run(run_name="LogisticRegression_C5") as run:
         print(f"MLflow Run ID: {run.info.run_id}")
 
@@ -67,7 +71,7 @@ def main():
 
         preds = pipeline.predict(X_test)
         accuracy = accuracy_score(y_test, preds)
-        print(f"Test Accuracy: {accuracy:.4f}")
+        print(f"✅ Test Accuracy: {accuracy:.4f}")
         mlflow.log_metric("accuracy", accuracy)
 
         signature = infer_signature(X_train, pipeline.predict(X_train))
@@ -83,23 +87,22 @@ def main():
         )
 
         # ----------------------------------------------------------
-        # alias'ı otomatik ekleme
-        client = MlflowClient(tracking_uri=MLFLOW_URI)
-        latest_version_info = client.get_latest_versions(REGISTERED_MODEL_NAME)[0]
-        version = latest_version_info.version
-
         try:
+            client = MlflowClient(tracking_uri=MLFLOW_URI)
+            latest_version_info = client.get_latest_versions(REGISTERED_MODEL_NAME)[0]
+            version = latest_version_info.version
+
             client.set_registered_model_alias(
                 name=REGISTERED_MODEL_NAME,
                 alias=PRODUCTION_ALIAS,
                 version=version
             )
-            print(f"✅ '{REGISTERED_MODEL_NAME}' modelinin {version}. versiyonu '{PRODUCTION_ALIAS}' alias'ına atandı.")
+            print(f"🚀 '{REGISTERED_MODEL_NAME}' modelinin {version}. versiyonu '{PRODUCTION_ALIAS}' alias'ına atandı.")
         except Exception as e:
-            print(f"⚠️ Alias eklenemedi: {e}")
+            print(f"⚠️ Alias eklenemedi (MLflow server kapalı olabilir): {e}")
 
         print("Run tamamlandı.")
-        print(f"🏃 Run detayları: http://127.0.0.1:5000/#/experiments/{run.info.experiment_id}/runs/{run.info.run_id}")
+        print(f"📊 Run klasörü: {os.path.abspath('mlruns')}")
 
 # --------------------------------------------------------------
 if __name__ == "__main__":
